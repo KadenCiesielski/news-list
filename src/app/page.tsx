@@ -20,8 +20,11 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("newest");
 
-  const { data: fetchedArticles, isLoading, isError } =
-    useGetArticlesQuery("technology");
+  const {
+    data: fetchedArticles,
+    isLoading,
+    isError,
+  } = useGetArticlesQuery("technology");
 
   const [saveArticles] = useSaveArticlesMutation();
 
@@ -30,7 +33,7 @@ export default function Home() {
     if (saved) {
       try {
         setArticles(JSON.parse(saved));
-        return; 
+        return;
       } catch {
         console.warn("Failed to parse saved articles.");
       }
