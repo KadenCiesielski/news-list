@@ -12,13 +12,20 @@ export interface Article {
   urlToImage?: string;
 }
 
-export async function fetchTopHeadlines(query = "technology"): Promise<Article[]> {
-  const res = await fetch(`${API_BASE}/top-headlines?q=${encodeURIComponent(query)}&language=en&pageSize=20`, {
-    headers: {
-      "X-Api-Key": process.env.NEWS_API_KEY!,
-    },
-    next: { revalidate: 3600 }, 
-  });
+export async function fetchTopHeadlines(
+  query = "technology"
+): Promise<Article[]> {
+  const res = await fetch(
+    `${API_BASE}/top-headlines?q=${encodeURIComponent(
+      query
+    )}&language=en&pageSize=20`,
+    {
+      headers: {
+        "X-Api-Key": process.env.NEWS_API_KEY!,
+      },
+      next: { revalidate: 3600 },
+    }
+  );
 
   if (!res.ok) {
     console.error("Failed to fetch news:", res.statusText);
