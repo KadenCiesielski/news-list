@@ -1,71 +1,97 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 type Article = {
   title: string;
   author: string;
   publishedAt: string;
   description: string;
-  url: string;
   source: { name: string };
+  url: string;
 };
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNews = async () => {
+    const fetchArticles = async () => {
       try {
-        const response = await fetch(
-          `https://newsapi.org/v2/top-headlines?country=us&apiKey=${process.env.NEWS_API_KEY}`
-        );
-        const data = await response.json();
-        if (data.articles) {
-          setArticles(data.articles);
-        } else {
-          setError('No articles found.');
-        }
-      } catch (err) {
-        setError('Error fetching news.');
-        console.error(err);
+        const res = await fetch('/api/news');
+        const data = await res.json();
+        setArticles(data.articles);
+      } catch (error) {
+        console.error('Failed to fetch articles:', error);
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchNews();
+    fetchArticles();
   }, []);
 
+  const updateField = (
+    index: number,
+    field: keyof Article,
+    value: string
+  ) => {
+    const updated = [...articles];
+    updated[index] = { ...updated[index], [field]: value };
+    setArticles(updated);
+  };
+
+  if (loading) return <div className="p-4 text-gray-500">Loading...</div>;
+
   return (
-    <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">📰 Top Headlines</h1>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <div className="space-y-6">
-        {articles.map((article, index) => (
-          <div
-            key={index}
-            className="border p-4 rounded-lg shadow hover:shadow-md transition"
-          >
-            <h2 className="text-xl font-semibold mb-1">{article.title}</h2>
-            <p className="text-sm text-gray-600 mb-1">
-              By {article.author || 'Unknown'} •{' '}
-              {new Date(article.publishedAt).toLocaleDateString()}
-            </p>
-            <p className="text-gray-700 mb-2">{article.description}</p>
-            <p className="text-sm text-gray-500 mb-2">
-              Source: {article.source.name}
-            </p>
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm"
-            >
-              Read full article →
-            </a>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4">Top Headlines</h1>
+      {articles.map((article, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-xl shadow-md p-4 mb-6 space-y-2 border border-gray-200"
+        >
+          <div>
+            <label className="text-sm text-gray-600">Title:</label>
+            <input
+              className="w-full border px-2 py-1 rounded mt-1"
+              value={article.title}
+              onChange={(e) =>
+                updateField(index, 'title', e.target.value)
+              }
+            />
           </div>
-        ))}
-      </div>
-    </main>
+
+          <div>
+            <label className="text-sm text-gray-600">Byline / Author:</label>
+            <input
+              className="w-full border px-2 py-1 rounded mt-1"
+              value={article.author || ''}
+              onChange={(e) =>
+                updateField(index, 'author', e.target.value)
+              }
+            />
+          </div>
+
+          <p className="text-sm text-gray-500">
+            Published: {new Date(article.publishedAt).toLocaleString()}
+          </p>
+
+          <p className="text-gray-700">{article.description}</p>
+
+          <p className="text-sm">
+            Source: <strong>{article.source.name}</strong>
+          </p>
+
+          <a
+            href={article.url}
+            target="_blank"
+            className="text-blue-600 underline text-sm"
+            rel="noopener noreferrer"
+          >
+            Read full article →
+          </a>
+        </div>
+      ))}
+    </div>
   );
 }
