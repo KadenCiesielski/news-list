@@ -1,10 +1,16 @@
+// app/store.ts
 import { configureStore } from "@reduxjs/toolkit";
-import { newsApi } from "@/lib/newsService"; // RTK Query service for API
+import { newsService } from "@/lib/newsService";
+import { saveArticleService } from "@/lib/newsService";
 
 export const store = configureStore({
   reducer: {
-    [newsApi.reducerPath]: newsApi.reducer, // Integrate RTK Query reducer
+    [newsService.reducerPath]: newsService.reducer,
+    [saveArticleService.reducerPath]: saveArticleService.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(newsApi.middleware), // Add middleware for caching, refetching, etc.
+    getDefaultMiddleware().concat(
+      newsService.middleware,
+      saveArticleService.middleware
+    ),
 });

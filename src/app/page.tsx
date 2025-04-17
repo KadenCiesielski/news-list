@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useGetArticlesQuery, useSaveArticlesMutation } from "@/lib/newsService";
+import {
+  useGetArticlesQuery,
+  useSaveArticlesMutation,
+} from "@/lib/newsService";
 
 type Article = {
   title: string;
@@ -17,10 +20,23 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("newest");
 
-  const { data: fetchedArticles, isLoading, isError } = useGetArticlesQuery("technology");
+  const { data: fetchedArticles, isLoading, isError } =
+    useGetArticlesQuery("technology");
+
   const [saveArticles] = useSaveArticlesMutation();
 
+  // Load saved articles from localStorage if they exist
   useEffect(() => {
+    const saved = localStorage.getItem("news-articles");
+    if (saved) {
+      try {
+        setArticles(JSON.parse(saved));
+        return; // ✅ Don't use fetchedArticles if local version exists
+      } catch {
+        console.warn("Failed to parse saved articles.");
+      }
+    }
+
     if (fetchedArticles && fetchedArticles.length > 0) {
       setArticles(fetchedArticles);
     }
@@ -37,16 +53,28 @@ export default function Home() {
   };
 
   const handleSave = async () => {
-    const confirmSave = window.confirm("Are you sure you want to save your changes?");
+    const confirmSave = window.confirm(
+      "Are you sure you want to save your changes?"
+    );
     if (!confirmSave) return;
 
     try {
-      await saveArticles(articles).unwrap(); // RTK Mutation
-      alert("Changes saved!");
+      await saveArticles(articles).unwrap();
+      alert("Changes saved! They’ll stay even if you refresh.");
     } catch (error) {
       alert("Failed to save articles.");
       console.error(error);
     }
+  };
+
+  const handleClearChanges = () => {
+    const confirmClear = window.confirm(
+      "Clear your saved changes and reload original articles on next refresh?"
+    );
+    if (!confirmClear) return;
+
+    localStorage.removeItem("news-articles");
+    alert("Changes cleared. Refresh the page to reload original articles.");
   };
 
   const filteredArticles = articles.filter((article) =>
@@ -55,9 +83,13 @@ export default function Home() {
 
   const sortedArticles = [...filteredArticles].sort((a, b) => {
     if (sortOption === "newest") {
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      return (
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
     } else if (sortOption === "oldest") {
-      return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+      return (
+        new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime()
+      );
     } else if (sortOption === "source-az") {
       return a.source.name.localeCompare(b.source.name);
     } else if (sortOption === "source-za") {
@@ -100,12 +132,7 @@ export default function Home() {
         </button>
 
         <button
-          onClick={() => {
-            const confirmClear = window.confirm("Clear all saved articles?");
-            if (confirmClear) {
-              setArticles([]);
-            }
-          }}
+          onClick={handleClearChanges}
           style={{
             padding: "10px 20px",
             backgroundColor: "#f44336",
@@ -113,7 +140,7 @@ export default function Home() {
             border: "none",
           }}
         >
-          Clear Articles
+          Clear Changes
         </button>
       </div>
 
