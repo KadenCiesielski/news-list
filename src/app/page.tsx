@@ -14,84 +14,105 @@ type Article = {
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchArticles = async () => {
+    const loadArticles = async () => {
       try {
+        const saved = localStorage.getItem('savedArticles');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setArticles(parsed);
+            return;
+          }
+        }
+
         const res = await fetch('/api/news');
         const data = await res.json();
-        setArticles(data.articles);
+        if (data.articles && Array.isArray(data.articles)) {
+          setArticles(data.articles);
+        } else {
+          console.error("Invalid data from API:", data);
+        }
       } catch (error) {
-        console.error('Failed to fetch articles:', error);
+        console.error('Failed to load articles:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchArticles();
+
+    loadArticles();
   }, []);
 
-  const updateField = (
-    index: number,
-    field: keyof Article,
-    value: string
-  ) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const updateField = (index: number, field: keyof Article, value: string) => {
     const updated = [...articles];
     updated[index] = { ...updated[index], [field]: value };
     setArticles(updated);
   };
 
-  if (loading) return <div className="p-4 text-gray-500">Loading...</div>;
+  const handleSave = () => {
+    localStorage.setItem('savedArticles', JSON.stringify(articles));
+    alert('Changes saved!');
+  };
+
+  const filteredArticles = articles.filter((article) =>
+    article.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) return <p>Loading articles...</p>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Top Headlines</h1>
-      {articles.map((article, index) => (
-        <div
-          key={index}
-          className="bg-white rounded-xl shadow-md p-4 mb-6 space-y-2 border border-gray-200"
-        >
-          <div>
-            <label className="text-sm text-gray-600">Title:</label>
-            <input
-              className="w-full border px-2 py-1 rounded mt-1"
-              value={article.title}
-              onChange={(e) =>
-                updateField(index, 'title', e.target.value)
-              }
-            />
-          </div>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h1>News Articles</h1>
+      <input
+        type="text"
+        placeholder="Search by title..."
+        value={searchTerm}
+        onChange={handleSearchChange}
+        style={{ marginBottom: '20px', padding: '10px', width: '100%' }}
+      />
+      <button onClick={handleSave} style={{ marginBottom: '30px', padding: '10px 20px' }}>
+        Save Changes
+      </button>
 
-          <div>
-            <label className="text-sm text-gray-600">Byline / Author:</label>
-            <input
-              className="w-full border px-2 py-1 rounded mt-1"
-              value={article.author || ''}
-              onChange={(e) =>
-                updateField(index, 'author', e.target.value)
-              }
-            />
-          </div>
-
-          <p className="text-sm text-gray-500">
-            Published: {new Date(article.publishedAt).toLocaleString()}
-          </p>
-
-          <p className="text-gray-700">{article.description}</p>
-
-          <p className="text-sm">
-            Source: <strong>{article.source.name}</strong>
-          </p>
-
-          <a
-            href={article.url}
-            target="_blank"
-            className="text-blue-600 underline text-sm"
-            rel="noopener noreferrer"
+      {filteredArticles.length > 0 ? (
+        filteredArticles.map((article, index) => (
+          <div
+            key={index}
+            style={{
+              marginBottom: '30px',
+              padding: '15px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+            }}
           >
-            Read full article →
-          </a>
-        </div>
-      ))}
+            <input
+              type="text"
+              value={article.title}
+              onChange={(e) => updateField(index, 'title', e.target.value)}
+              style={{ fontSize: '18px', fontWeight: 'bold', width: '100%' }}
+            />
+            <input
+              type="text"
+              value={article.author || ''}
+              onChange={(e) => updateField(index, 'author', e.target.value)}
+              placeholder="Author"
+              style={{ width: '100%', marginTop: '5px', marginBottom: '10px' }}
+            />
+            <p>{article.description}</p>
+            <a href={article.url} target="_blank" rel="noopener noreferrer">
+              Read more
+            </a>
+          </div>
+        ))
+      ) : (
+        <p>No articles found.</p>
+      )}
     </div>
   );
 }
