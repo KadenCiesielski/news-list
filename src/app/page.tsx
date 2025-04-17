@@ -25,13 +25,12 @@ export default function Home() {
 
   const [saveArticles] = useSaveArticlesMutation();
 
-  // Load saved articles from localStorage if they exist
   useEffect(() => {
     const saved = localStorage.getItem("news-articles");
     if (saved) {
       try {
         setArticles(JSON.parse(saved));
-        return; // ✅ Don't use fetchedArticles if local version exists
+        return; 
       } catch {
         console.warn("Failed to parse saved articles.");
       }

@@ -1,4 +1,3 @@
-// app/store.ts
 import { configureStore } from "@reduxjs/toolkit";
 import { newsService } from "@/lib/newsService";
 import { saveArticleService } from "@/lib/newsService";

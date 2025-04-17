@@ -1,4 +1,3 @@
-// lib/newsService.ts
 import { createApi, fetchBaseQuery, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const NEWS_API_KEY = process.env.NEXT_PUBLIC_NEWS_API_KEY;
@@ -17,7 +16,7 @@ export const newsService = createApi({
 
 export const saveArticleService = createApi({
   reducerPath: "saveArticleService",
-  baseQuery: fakeBaseQuery(), // ✅ this avoids real HTTP
+  baseQuery: fakeBaseQuery(), 
   endpoints: (builder) => ({
     saveArticles: builder.mutation({
       queryFn: async (articles: any) => {
