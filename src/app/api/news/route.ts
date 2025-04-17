@@ -40,14 +40,17 @@ export async function GET() {
 
     const data = await res.json();
 
-    const articles = data.articles.map((a: any) => ({
-      title: a.title,
-      author: a.author,
-      description: a.description,
-      publishedAt: a.publishedAt,
-      source: { name: a.source.name },
-      url: a.url,
-    }));
+    const articles = data.articles.map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (a: any) => ({
+        title: a.title,
+        author: a.author,
+        description: a.description,
+        publishedAt: a.publishedAt,
+        source: { name: a.source.name },
+        url: a.url,
+      })
+    );
 
     return NextResponse.json(articles);
   } catch (error) {

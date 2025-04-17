@@ -13,6 +13,7 @@ export const newsService = createApi({
     getArticles: builder.query({
       query: (topic: string) =>
         `everything?q=${topic}&pageSize=10&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transformResponse: (response: any) => response.articles,
     }),
   }),
@@ -23,6 +24,7 @@ export const saveArticleService = createApi({
   baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
     saveArticles: builder.mutation({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       queryFn: async (articles: any) => {
         try {
           localStorage.setItem("news-articles", JSON.stringify(articles));
