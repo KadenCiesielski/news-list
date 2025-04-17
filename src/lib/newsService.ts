@@ -1,3 +1,5 @@
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
 const API_BASE = "https://newsapi.org/v2";
 
 export interface Article {
@@ -35,3 +37,28 @@ export async function fetchTopHeadlines(
   const data = await res.json();
   return data.articles as Article[];
 }
+
+export const newsApi = createApi({
+  reducerPath: "newsApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE,
+    prepareHeaders: (headers) => {
+      headers.set("X-Api-Key", process.env.NEWS_API_KEY!); // Add the API key header
+      return headers;
+    },
+  }),
+  endpoints: (builder) => ({
+    getArticles: builder.query<Article[], string>({
+      query: (query) => `/top-headlines?q=${query}&language=en&pageSize=20`,
+    }),
+    saveArticles: builder.mutation<void, Article[]>({
+      query: (articles) => ({
+        url: "/save-articles", // Define backend endpoint here
+        method: "POST",
+        body: articles,
+      }),
+    }),
+  }),
+});
+
+export const { useGetArticlesQuery, useSaveArticlesMutation } = newsApi;
