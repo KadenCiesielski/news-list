@@ -12,7 +12,7 @@ export const newsService = createApi({
   endpoints: (builder) => ({
     getArticles: builder.query({
       query: (topic: string) =>
-        `everything?q=${topic}&pageSize=10&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`,
+        `top-headlines?country=us&category=${topic}&pageSize=10&apiKey=${NEWS_API_KEY}`,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transformResponse: (response: any) => response.articles,
     }),
