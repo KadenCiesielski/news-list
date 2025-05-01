@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+const loadFromLocalStorage = () => {
+  if (typeof window === "undefined") return null;
+  const data = localStorage.getItem("articles");
+  return data ? JSON.parse(data) : null;
+};
+
 export interface Article {
   title: string;
   author: string;
