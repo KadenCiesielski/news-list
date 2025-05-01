@@ -193,32 +193,31 @@ export default function Page() {
                   />
                 </div>
 
+                {/* Description */}
+                <p className="text-2xl text-gray-700">{article.description}</p>
+
                 {/* Publish Date */}
                 <p className="underline text-2xl text-gray-600">
                   Published: {new Date(article.publishedAt).toLocaleString()}
                 </p>
 
-                {/* Description */}
-                <p className="text-2xl text-gray-700">{article.description}</p>
+                {/* Source */}
+                <p className="text-gray-500 italic text-sm">Source: {article.source?.name}</p>
 
                 {/* Link */}
                 <a
-               href={article.url}
-               target="_blank"
-               rel="noopener noreferrer"
-               style={{
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
                  color: "#007BFF",
                  textDecoration: "underline",
                  fontWeight: "bold",
                }}
-             >
-               Click Here To Open The Full Article
-             </a>
-
-                {/* Source */}
-                <p className="text-gray-500 italic text-sm">Source: {article.source?.name}</p>
-
-              </div>
+              >
+                Click Here To Open The Full Article
+              </a>
+                </div>
             );
           })}
         </div>
