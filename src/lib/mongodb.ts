@@ -11,8 +11,14 @@ if (!process.env.MONGODB_URI) {
 }
 
 declare global {
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
+  namespace NodeJS {
+    interface Global {
+      _mongoClientPromise?: Promise<MongoClient>;
+    }
+  }
 }
+
+declare const global: NodeJS.Global & { _mongoClientPromise?: Promise<MongoClient> };
 
 if (process.env.NODE_ENV === "development") {
   if (!global._mongoClientPromise) {
