@@ -1,206 +1,120 @@
 "use client";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { setArticles, updateArticle } from "@/app/articlesSlice";
 
-import React, { useEffect, useState } from "react";
-import {
-  useGetArticlesQuery,
-  useSaveArticlesMutation,
-} from "@/lib/newsService";
-
-type Article = {
-  title: string;
-  author: string;
-  publishedAt: string;
-  description: string;
-  source: { name: string };
-  url: string;
-};
-
-export default function Home() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("newest");
-
-  const {
-    data: fetchedArticles,
-    isLoading,
-    isError,
-  } = useGetArticlesQuery("technology");
-
-  const [saveArticles] = useSaveArticlesMutation();
+export default function Page() {
+  const dispatch = useDispatch();
+  const articles = useSelector((state: RootState) => state.articles.articles);
+  const [filter, setFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("news-articles");
-    if (saved) {
+    async function fetchArticles() {
+      setLoading(true);
       try {
-        setArticles(JSON.parse(saved));
-        return;
-      } catch {
-        console.warn("Failed to parse saved articles.");
+        const res = await fetch("/api/news");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        dispatch(setArticles(data));
+      } catch (error) {
+        console.error("Error loading articles:", error);
+      } finally {
+        setLoading(false);
       }
     }
-
-    if (fetchedArticles && fetchedArticles.length > 0) {
-      setArticles(fetchedArticles);
-    }
-  }, [fetchedArticles]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const updateField = (index: number, field: keyof Article, value: string) => {
-    const updated = [...articles];
-    updated[index] = { ...updated[index], [field]: value };
-    setArticles(updated);
-  };
+    fetchArticles();
+  }, [dispatch]);
 
   const handleSave = async () => {
-    const confirmSave = window.confirm(
-      "Are you sure you want to save your changes?"
-    );
-    if (!confirmSave) return;
-
+    setSaving(true);
     try {
-      await saveArticles(articles).unwrap();
-      alert("Changes saved! They’ll stay even if you refresh.");
-    } catch (error) {
-      alert("Failed to save articles.");
-      console.error(error);
+      const res = await fetch("/api/news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(articles),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      alert("Articles saved!");
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Failed to save changes.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleClearChanges = () => {
-    const confirmClear = window.confirm(
-      "Clear your saved changes and reload original articles on next refresh?"
-    );
-    if (!confirmClear) return;
-
-    localStorage.removeItem("news-articles");
-    alert("Changes cleared. Refresh the page to reload original articles.");
-  };
-
-  const filteredArticles = articles.filter((article) =>
-    article.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredArticles = articles.filter(
+    (a) =>
+      a.title?.toLowerCase().includes(filter.toLowerCase()) ||
+      a.author?.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const sortedArticles = [...filteredArticles].sort((a, b) => {
-    if (sortOption === "newest") {
-      return (
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      );
-    } else if (sortOption === "oldest") {
-      return (
-        new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime()
-      );
-    } else if (sortOption === "source-az") {
-      return a.source.name.localeCompare(b.source.name);
-    } else if (sortOption === "source-za") {
-      return b.source.name.localeCompare(a.source.name);
-    }
-    return 0;
-  });
-
-  if (isLoading) return <p>Loading articles...</p>;
-  if (isError) return <p>Failed to load articles. Please try again later.</p>;
-
+  
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <h1>News Articles</h1>
+    <main className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">News List</h1>
 
-      <div style={{ display: "flex", gap: "15px", marginBottom: "20px" }}>
-        <input
-          type="text"
-          placeholder="Search by title..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{ padding: "10px", flex: 1 }}
-        />
+      <input
+        className="p-2 border w-full mb-4"
+        type="text"
+        placeholder="Filter by title or author..."
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+      />
 
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-          style={{ padding: "10px" }}
-        >
-          <option value="newest">Sort by Date (Newest)</option>
-          <option value="oldest">Sort by Date (Oldest)</option>
-          <option value="source-az">Sort by Source (A–Z)</option>
-          <option value="source-za">Sort by Source (Z–A)</option>
-        </select>
-      </div>
-
-      <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
-        <button onClick={handleSave} style={{ padding: "10px 20px" }}>
-          Save Changes
-        </button>
-
-        <button
-          onClick={handleClearChanges}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#f44336",
-            color: "#fff",
-            border: "none",
-          }}
-        >
-          Clear Changes
-        </button>
-      </div>
-
-      {sortedArticles.length > 0 ? (
-        sortedArticles.map((article, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "30px",
-              padding: "15px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-            }}
-          >
-            <input
-              type="text"
-              value={article.title}
-              onChange={(e) => updateField(index, "title", e.target.value)}
-              style={{ fontSize: "18px", fontWeight: "bold", width: "100%" }}
-            />
-            <input
-              type="text"
-              value={article.author || ""}
-              onChange={(e) => updateField(index, "author", e.target.value)}
-              placeholder="Author"
-              style={{ width: "100%", marginTop: "5px", marginBottom: "10px" }}
-            />
-
-            <p style={{ margin: "5px 0", color: "#555" }}>
-              <strong>Source:</strong> {article.source.name || "Unknown Source"}
-            </p>
-            <p style={{ margin: "5px 0", color: "#555" }}>
-              <strong>Published:</strong>{" "}
-              {new Date(article.publishedAt).toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </p>
-
-            <p>{article.description}</p>
-
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#007BFF",
-                textDecoration: "underline",
-                fontWeight: "bold",
-              }}
-            >
-              Click Here To Open The Full Article
-            </a>
-          </div>
-        ))
+      {loading ? (
+        <p>Loading...</p>
       ) : (
-        <p>No articles found.</p>
+        <div className="space-y-6">
+          {filteredArticles.map((article, idx) => (
+            <div key={idx} className="border rounded-xl p-4 shadow">
+              <div className="mb-2">
+                <label className="block text-sm font-medium">Title</label>
+                <input
+                  className="p-2 border w-full"
+                  value={article.title}
+                  onChange={(e) =>
+                    dispatch(updateArticle({ index: idx, field: "title", value: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block text-sm font-medium">Author</label>
+                <input
+                  className="p-2 border w-full"
+                  value={article.author || ""}
+                  onChange={(e) =>
+                    dispatch(updateArticle({ index: idx, field: "author", value: e.target.value }))
+                  }
+                />
+              </div>
+              <p className="text-sm text-gray-600 mb-1">
+                Published: {new Date(article.publishedAt).toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-700">{article.description}</p>
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline text-sm"
+              >
+                Read full article
+              </a>
+            </div>
+          ))}
+        </div>
       )}
-    </div>
+
+      <button
+        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        {saving ? "Saving..." : "Save Changes"}
+      </button>
+    </main>
   );
 }
