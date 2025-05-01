@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { RootState } from "@/app/store";
 import { setArticles, updateArticle } from "@/app/articlesSlice";
 
 export default function Page() {
