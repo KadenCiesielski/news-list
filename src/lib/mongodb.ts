@@ -9,23 +9,16 @@ let clientPromise: Promise<MongoClient>;
 if (!process.env.MONGODB_URI) {
   throw new Error("Please add your Mongo URI to .env.local");
 }
-
 declare global {
-  namespace NodeJS {
-    interface Global {
-      _mongoClientPromise?: Promise<MongoClient>;
-    }
-  }
+  let _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-declare const global: NodeJS.Global & { _mongoClientPromise?: Promise<MongoClient> };
-
 if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
+  if (!_mongoClientPromise) {
     client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+    _mongoClientPromise = client.connect();
   }
-  clientPromise = global._mongoClientPromise;
+  clientPromise = _mongoClientPromise;
 } else {
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
